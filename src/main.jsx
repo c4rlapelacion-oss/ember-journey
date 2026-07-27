@@ -366,6 +366,18 @@ function DataProvider({ children }) {
     await refresh();
   }
 
+  async function deleteQr(qrId) {
+    if (profile?.role !== "admin") throw new Error("Only Admins can delete QR codes.");
+
+    const { error } = await supabase
+      .from("qr_codes")
+      .delete()
+      .eq("id", qrId);
+
+    if (error) throw error;
+    await refresh();
+  }
+
   const myEntries = entries
     .filter((entry) => entry.user_id === user?.id)
     .sort((a, b) => Number(a.talk_number) - Number(b.talk_number));
@@ -385,7 +397,8 @@ function DataProvider({ children }) {
       resetParticipantJourney,
       deleteParticipant,
       generateQr,
-      toggleQr
+      toggleQr,
+      deleteQr
     }}>
       {children}
     </DataContext.Provider>
@@ -892,7 +905,7 @@ function AdminPage() {
   const {
     profiles, entries, qrCodes, createParticipant,
     resetParticipantJourney, deleteParticipant,
-    generateQr, toggleQr
+    generateQr, toggleQr, deleteQr
   } = useData();
 
   const [tab, setTab] = useState("participants");
@@ -932,6 +945,23 @@ function AdminPage() {
         qrForm.closes_at ? new Date(qrForm.closes_at).toISOString() : null
       );
       setMessage("A new QR code was generated. Previous codes for this talk were deactivated.");
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+  async function removeQr(qr) {
+    const talk = TALKS.find((item) => item.number === Number(qr.talk_number));
+    const confirmed = window.confirm(
+      `Delete the QR code for Talk ${qr.talk_number}: ${talk?.title ?? "Untitled"}?\n\nThis QR link will stop working permanently.`
+    );
+
+    if (!confirmed) return;
+    setMessage("");
+
+    try {
+      await deleteQr(qr.id);
+      setMessage(`QR code for Talk ${qr.talk_number} was deleted.`);
     } catch (error) {
       setMessage(error.message);
     }
@@ -1097,9 +1127,14 @@ function AdminPage() {
                   />
 
                   <code>{scanUrl}</code>
-                  <button className="secondary" onClick={() => toggleQr(qr)}>
-                    {qr.is_active ? "Deactivate" : "Activate"}
-                  </button>
+                  <div className="qr-actions">
+                    <button type="button" className="secondary" onClick={() => toggleQr(qr)}>
+                      {qr.is_active ? "Deactivate" : "Activate"}
+                    </button>
+                    <button type="button" className="secondary danger" onClick={() => removeQr(qr)}>
+                      Delete QR
+                    </button>
+                  </div>
                 </article>
               );
             })}

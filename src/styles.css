@@ -195,3 +195,21 @@ small{color:var(--muted)}
   .person-row{grid-template-columns:40px minmax(0,1fr) auto!important}
   .person-actions{grid-column:2 / -1;justify-content:flex-end}
 }
+
+
+.qr-actions{
+  display:flex;
+  gap:.65rem;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+.secondary.danger{
+  color:#a42618;
+  border-color:#efc3b9;
+  background:#fff5f2;
+}
+.secondary.danger:hover{
+  color:#fff;
+  border-color:#c92c1d;
+  background:#c92c1d;
+}
